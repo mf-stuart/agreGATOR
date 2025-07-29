@@ -15,10 +15,7 @@ type Config struct {
 func (c *Config) SetUsername(username string) error {
 	c.CurrentUsername = username
 	err := write(*c)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func getConfigFilePath() (string, error) {
@@ -58,8 +55,5 @@ func write(configStruct Config) error {
 		return err
 	}
 	err = os.WriteFile(filePath, jsonData, 0644)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
