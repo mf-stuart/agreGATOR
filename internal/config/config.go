@@ -2,11 +2,16 @@ package config
 
 import (
 	"encoding/json"
+	"github.com/mf-stuart/agreGATOR/internal/database"
 	"os"
 )
 
 const configFileName = "/.gatorconfig.json"
 
+type State struct {
+	Db  *database.Queries
+	Cfg *Config
+}
 type Config struct {
 	DbUrl           string `json:"db_url"`
 	CurrentUsername string `json:"current_username"`
