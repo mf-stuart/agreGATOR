@@ -2,10 +2,18 @@ package api
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
+	"errors"
+	"fmt"
+	"github.com/google/uuid"
+	"github.com/lib/pq"
+	"github.com/mf-stuart/gator/internal/config"
+	"github.com/mf-stuart/gator/internal/database"
 	"html"
 	"io"
 	"net/http"
+	"time"
 )
 
 type RSSFeed struct {
@@ -52,4 +60,60 @@ func FetchFeed(ctx context.Context, feedUrl string) (*RSSFeed, error) {
 		feed.Channel.Item[i].Description = html.UnescapeString(feed.Channel.Item[i].Description)
 	}
 	return &feed, nil
+}
+
+func ScrapeFeeds(s *config.State) error {
+	nextFeed, err := s.Db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return err
+	}
+	markFeedFetchedParams := database.MarkFeedFetchedParams{
+		LastFetchedAt: sql.NullTime{
+			Time:  time.Now(),
+			Valid: true,
+		},
+		ID: nextFeed.ID,
+	}
+	err = s.Db.MarkFeedFetched(context.Background(), markFeedFetchedParams)
+	if err != nil {
+		return err
+	}
+	rssFeed, err := FetchFeed(context.Background(), nextFeed.Url)
+	if err != nil {
+		return err
+	}
+
+	for _, item := range rssFeed.Channel.Item {
+		pubDate, err := time.Parse("Mon, 02 Jan 2006 15:04:05 MST", item.PubDate)
+		if err != nil {
+			return err
+		}
+		createPostParams := database.CreatePostParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			Title:     item.Title,
+			Url:       item.Link,
+			Description: sql.NullString{
+				String: html.UnescapeString(item.Description),
+				Valid:  true,
+			},
+			PublishedAt: pubDate,
+			FeedID:      nextFeed.ID,
+		}
+		post, err := s.Db.CreatePost(context.Background(), createPostParams)
+		if err != nil {
+			var pqErr *pq.Error
+			if errors.As(err, &pqErr) {
+				if pqErr.Code == "23503" {
+					fmt.Printf("post %s already exists\n", item.Title)
+				}
+			} else {
+				return err
+			}
+		} else {
+			fmt.Printf("post %s created\n", post.Title)
+		}
+	}
+	return nil
 }

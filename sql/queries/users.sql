@@ -1,5 +1,5 @@
--- Name: CreateUser :one
-INSERT INTO users(id, created_at, updated_at, Name)
+-- name: CreateUser :one
+INSERT INTO users(id, created_at, updated_at, name)
 VALUES
 (
     $1,
@@ -9,16 +9,16 @@ VALUES
 )
 RETURNING *;
 
--- Name: GetUser :one
+-- name: GetUser :one
 SELECT * FROM users
-WHERE Name = $1;
+WHERE name = $1;
 
--- Name: GetUserByID :one
+-- name: GetUserByID :one
 SELECT * FROM users
 WHERE id = $1;
 
--- Name: GetUsers :many
+-- name: GetUsers :many
 SELECT * FROM users;
 
--- Name: Reset :exec
+-- name: Reset :exec
 DELETE FROM users;

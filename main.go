@@ -4,16 +4,17 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
-	"github.com/mf-stuart/agreGATOR/commands"
-	"github.com/mf-stuart/agreGATOR/internal/config"
-	"github.com/mf-stuart/agreGATOR/internal/database"
-	"github.com/mf-stuart/agreGATOR/internal/middle_ware"
+	"github.com/mf-stuart/gator/commands"
+	"github.com/mf-stuart/gator/internal/config"
+	"github.com/mf-stuart/gator/internal/database"
+	"github.com/mf-stuart/gator/internal/middle_ware"
 	"os"
 )
 
 var s = config.State{}
 
 func main() {
+
 	configData, err := config.Read()
 	if err != nil {
 		fmt.Printf("Error reading config: %s\n", err)
@@ -34,6 +35,7 @@ func main() {
 	commands.Cmds.Register("follow", middle_ware.LoggedIn(commands.HandlerFollow))
 	commands.Cmds.Register("unfollow", middle_ware.LoggedIn(commands.HandlerUnfollow))
 	commands.Cmds.Register("following", middle_ware.LoggedIn(commands.HandlerFollowing))
+	commands.Cmds.Register("browse", commands.HandlerBrowse)
 
 	cmdName := os.Args[1]
 	args := os.Args[2:]
