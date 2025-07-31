@@ -2,13 +2,13 @@ package commands
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/mf-stuart/agreGATOR/internal/api"
-	"github.com/mf-stuart/agreGATOR/internal/config"
-	"github.com/mf-stuart/agreGATOR/internal/database"
+	"github.com/mf-stuart/gator/internal/api"
+	"github.com/mf-stuart/gator/internal/config"
+	"github.com/mf-stuart/gator/internal/database"
+	"strconv"
 	"time"
 )
 
@@ -110,22 +110,20 @@ func HandlerUsers(s *config.State, cmd Command) error {
 }
 
 func HandlerAgg(s *config.State, cmd Command) error {
-	var url string
-	if len(cmd.Args) == 0 {
-		url = "https://www.wagslane.dev/index.xml"
-	} else {
-		url = cmd.Args[0]
+	if len(cmd.Args) != 1 {
+		return errors.New("usage: agg <time_between_reqs>")
 	}
-
-	rssFeed, err := api.FetchFeed(context.Background(), url)
+	timeBetweenReqs, err := time.ParseDuration(cmd.Args[0])
 	if err != nil {
 		return err
 	}
-	b, err := json.MarshalIndent(rssFeed, "", "  ")
-	if err != nil {
-		return err
+	ticker := time.NewTicker(timeBetweenReqs)
+	for ; ; <-ticker.C {
+		err := api.ScrapeFeeds(s)
+		if err != nil {
+			return err
+		}
 	}
-	fmt.Println(string(b))
 	return nil
 }
 
@@ -175,7 +173,7 @@ func HandlerFeeds(s *config.State, cmd Command) error {
 		return err
 	}
 	for _, feed := range feeds {
-		user, err := s.Db.GetUserFromID(context.Background(), feed.UserID)
+		user, err := s.Db.GetUserByID(context.Background(), feed.UserID)
 		if err != nil {
 			return err
 		}
@@ -190,7 +188,7 @@ func HandlerFollow(s *config.State, cmd Command, user database.User) error {
 	}
 	url := cmd.Args[0]
 
-	feed, err := s.Db.GetFeedFromUrl(context.Background(), url)
+	feed, err := s.Db.GetFeedByUrl(context.Background(), url)
 	if err != nil {
 		return err
 	}
@@ -241,11 +239,34 @@ func HandlerFollowing(s *config.State, cmd Command, user database.User) error {
 		return err
 	}
 	for _, follow := range followList {
-		feed, err := s.Db.GetFeedFromId(context.Background(), follow.FeedID)
+		feed, err := s.Db.GetFeedById(context.Background(), follow.FeedID)
 		if err != nil {
 			return err
 		}
 		fmt.Printf("* %s\n", feed.Name)
+	}
+	return nil
+}
+
+func HandlerBrowse(s *config.State, cmd Command) error {
+	var limit int32
+	if len(cmd.Args) > 0 {
+		l, err := strconv.Atoi(cmd.Args[0])
+		if err != nil {
+			return err
+		}
+		limit = int32(l)
+	} else {
+		limit = 2
+	}
+
+	posts, err := s.Db.GetPosts(context.Background(), limit)
+	if err != nil {
+		return err
+	}
+
+	for _, post := range posts {
+		fmt.Printf("* %s\n", post.Title)
 	}
 	return nil
 }

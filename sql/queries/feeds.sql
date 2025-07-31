@@ -1,4 +1,4 @@
--- Name: CreateFeed :one
+-- name: CreateFeed :one
 INSERT INTO feeds(id, created_at, updated_at, Name, url, user_id)
 VALUES
 (
@@ -11,13 +11,23 @@ VALUES
 )
 RETURNING *;
 
--- Name: GetFeeds :many
+-- name: GetFeeds :many
 SELECT * FROM feeds;
 
--- Name: GetFeedByUrl :one
+-- name: GetFeedByUrl :one
 SELECT * FROM feeds
 WHERE url = $1;
 
--- Name: GetFeedById :one
+-- name: GetFeedById :one
 SELECT * FROM feeds
 WHERE id = $1;
+
+-- name: MarkFeedFetched :exec
+UPDATE feeds
+SET last_fetched_at = $1
+WHERE id = $2;
+
+-- name: GetNextFeedToFetch :one
+SELECT  * FROM feeds
+ORDER BY last_fetched_at NULLS FIRST
+LIMIT 1;

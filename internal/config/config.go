@@ -2,7 +2,7 @@ package config
 
 import (
 	"encoding/json"
-	"github.com/mf-stuart/agreGATOR/internal/database"
+	"github.com/mf-stuart/gator/internal/database"
 	"os"
 )
 

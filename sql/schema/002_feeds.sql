@@ -4,10 +4,11 @@ CREATE TABLE feeds
     id UUID PRIMARY KEY,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
-    Name TEXT NOT NULL,
+    name TEXT NOT NULL,
     url TEXT UNIQUE NOT NULL,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL
 );
 
+
 -- +goose Down
-DROP TABLE feeds;
+DROP TABLE IF EXISTS feeds;

@@ -2,9 +2,9 @@ package middle_ware
 
 import (
 	"context"
-	"github.com/mf-stuart/agreGATOR/commands"
-	"github.com/mf-stuart/agreGATOR/internal/config"
-	"github.com/mf-stuart/agreGATOR/internal/database"
+	"github.com/mf-stuart/gator/commands"
+	"github.com/mf-stuart/gator/internal/config"
+	"github.com/mf-stuart/gator/internal/database"
 )
 
 func LoggedIn(handler func(s *config.State, cmd commands.Command, user database.User) error) func(*config.State, commands.Command) error {
